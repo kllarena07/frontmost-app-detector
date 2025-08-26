@@ -25,8 +25,21 @@ fn register_class() -> &'static AnyClass {
     ) {
         unsafe {
             let dereference_notif: &mut NSNotification = &mut *notification;
-            let app = dereference_notif.userInfo();
-            println!("Application activated: {:?}", app);
+            let user_info = &*dereference_notif
+                .userInfo()
+                .expect("User info returned None");
+            let object = &*user_info
+                .objectForKey(NSWorkspaceApplicationKey)
+                .expect("Error getting NSWorkspaceApplicationKey Value");
+            let key_value: &NSRunningApplication = object
+                .downcast_ref::<NSRunningApplication>()
+                .expect("Value is not an NSRunningApplication");
+            println!(
+                "Application activated: {:?}",
+                key_value
+                    .localizedName()
+                    .expect("Failed to capture application localizedName")
+            );
         }
     }
     unsafe {
