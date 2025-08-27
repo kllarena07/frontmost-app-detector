@@ -5,16 +5,34 @@ use objc2_foundation::*;
 
 struct FrontmostAppDetector;
 
-type AppActivatedFn = unsafe extern "C" fn(*mut AnyObject, Sel, *mut NSNotification);
+type NotificationCallback = fn(&mut NSNotification);
 
 impl FrontmostAppDetector {
-    fn init(app_change_handler: AppActivatedFn) {
+    fn init(callback: NotificationCallback) {
+        static mut CALLBACK: Option<NotificationCallback> = None;
+        unsafe {
+            CALLBACK = Some(callback);
+        }
+
         let mut builder = ClassBuilder::new(c"AppObserver", NSObject::class())
             .expect("a class with name AppObserver likely already exists.");
 
         unsafe extern "C" fn init(this: *mut AnyObject, _sel: Sel) -> *mut AnyObject {
             let this: *mut AnyObject = msg_send![super(this, NSObject::class()), init];
             this
+        }
+
+        unsafe extern "C" fn application_activated(
+            _this: *mut AnyObject,
+            _sel: Sel,
+            notification: *mut NSNotification,
+        ) {
+            unsafe {
+                let dereference_notif: &mut NSNotification = &mut *notification;
+                if let Some(callback) = CALLBACK {
+                    callback(dereference_notif);
+                }
+            }
         }
 
         unsafe {
@@ -24,7 +42,7 @@ impl FrontmostAppDetector {
             );
             builder.add_method(
                 sel!(applicationActivated:),
-                app_change_handler
+                application_activated
                     as unsafe extern "C" fn(*mut AnyObject, Sel, *mut NSNotification),
             );
         }
@@ -49,35 +67,28 @@ impl FrontmostAppDetector {
 }
 
 fn main() {
-    unsafe {
-        unsafe extern "C" fn application_activated(
-            _this: *mut AnyObject,
-            _sel: Sel,
-            notification: *mut NSNotification,
-        ) {
-            unsafe {
-                let dereference_notif: &mut NSNotification = &mut *notification;
-                let user_info = &*dereference_notif
-                    .userInfo()
-                    .expect("User info returned None");
-                let object = &*user_info
-                    .objectForKey(NSWorkspaceApplicationKey)
-                    .expect("Error getting NSWorkspaceApplicationKey Value");
-                let key_value: &NSRunningApplication = object
-                    .downcast_ref::<NSRunningApplication>()
-                    .expect("Value is not an NSRunningApplication");
-                println!(
-                    "Application activated: {:?}",
-                    key_value
-                        .localizedName()
-                        .expect("Failed to capture application localizedName")
-                );
-            }
+    fn handle_app_change(notification: &mut NSNotification) {
+        unsafe {
+            let user_info = &*notification.userInfo().expect("User info returned None");
+            let object = &*user_info
+                .objectForKey(NSWorkspaceApplicationKey)
+                .expect("Error getting NSWorkspaceApplicationKey Value");
+            let key_value: &NSRunningApplication = object
+                .downcast_ref::<NSRunningApplication>()
+                .expect("Value is not an NSRunningApplication");
+            println!(
+                "Application activated: {:?}",
+                key_value
+                    .localizedName()
+                    .expect("Failed to capture application localizedName")
+            );
         }
+    }
 
-        FrontmostAppDetector::init(application_activated);
+    FrontmostAppDetector::init(handle_app_change);
 
-        println!("Monitoring application activations. Press Ctrl+C to stop.");
+    println!("Monitoring application activations. Press Ctrl+C to stop.");
+    unsafe {
         let current_run_loop = NSRunLoop::currentRunLoop();
         current_run_loop.run();
     }
