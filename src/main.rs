@@ -17,13 +17,13 @@ impl FrontmostAppDetector {
         let mut builder = ClassBuilder::new(c"AppObserver", NSObject::class())
             .expect("a class with name AppObserver likely already exists.");
 
-        unsafe extern "C" fn init(this: *mut AnyObject, _sel: Sel) -> *mut AnyObject {
-            let this: *mut AnyObject = msg_send![super(this, NSObject::class()), init];
+        unsafe extern "C" fn init(this: *mut NSObject, _sel: Sel) -> *mut NSObject {
+            let this: *mut NSObject = msg_send![super(this, NSObject::class()), init];
             this
         }
 
         unsafe extern "C" fn application_activated(
-            _this: *mut AnyObject,
+            _this: *mut NSObject,
             _sel: Sel,
             notification: *mut NSNotification,
         ) {
@@ -38,12 +38,12 @@ impl FrontmostAppDetector {
         unsafe {
             builder.add_method(
                 sel!(init),
-                init as unsafe extern "C" fn(*mut AnyObject, Sel) -> *mut AnyObject,
+                init as unsafe extern "C" fn(*mut NSObject, Sel) -> *mut NSObject,
             );
             builder.add_method(
                 sel!(applicationActivated:),
                 application_activated
-                    as unsafe extern "C" fn(*mut AnyObject, Sel, *mut NSNotification),
+                    as unsafe extern "C" fn(*mut NSObject, Sel, *mut NSNotification),
             );
         }
 
