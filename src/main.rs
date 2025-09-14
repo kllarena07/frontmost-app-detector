@@ -3,6 +3,15 @@ use objc2::*;
 use objc2_app_kit::*;
 use objc2_foundation::*;
 
+macro_rules! start_nsrunloop {
+    () => {
+        unsafe {
+            let current_run_loop = NSRunLoop::currentRunLoop();
+            current_run_loop.run();
+        }
+    };
+}
+
 struct FrontmostAppDetector;
 
 type NotificationCallback = fn(&mut NSNotification);
@@ -88,8 +97,5 @@ fn main() {
     FrontmostAppDetector::init(handle_app_change);
 
     println!("Monitoring application activations. Press Ctrl+C to stop.");
-    unsafe {
-        let current_run_loop = NSRunLoop::currentRunLoop();
-        current_run_loop.run();
-    }
+    start_nsrunloop!();
 }
