@@ -18,7 +18,7 @@ macro_rules! start_nsrunloop {
 
 struct FrontmostAppDetector;
 
-type NotificationCallback = fn(&mut NSNotification);
+type NotificationCallback = fn(&NSRunningApplication);
 
 impl FrontmostAppDetector {
     fn init(callback: NotificationCallback) {
@@ -42,8 +42,17 @@ impl FrontmostAppDetector {
         ) {
             unsafe {
                 let dereference_notif: &mut NSNotification = &mut *notification;
+                let user_info = dereference_notif
+                    .userInfo()
+                    .expect("userInfor returned as None");
+                let associated_object = user_info
+                    .objectForKey(NSWorkspaceApplicationKey)
+                    .expect("Failed to capture value for NSWorkspaceApplicationKey");
+                let ns_running_app: &NSRunningApplication = associated_object
+                    .downcast_ref::<NSRunningApplication>()
+                    .expect("Failed to downcast ref associated object to an NSRunningApplication");
                 if let Some(callback) = CALLBACK {
-                    callback(dereference_notif);
+                    callback(ns_running_app);
                 }
             }
         }
@@ -80,18 +89,11 @@ impl FrontmostAppDetector {
 }
 
 fn main() {
-    fn handle_app_change(notification: &mut NSNotification) {
+    fn handle_app_change(ns_running_application: &NSRunningApplication) {
         unsafe {
-            let user_info = &*notification.userInfo().expect("User info returned None");
-            let object = &*user_info
-                .objectForKey(NSWorkspaceApplicationKey)
-                .expect("Error getting NSWorkspaceApplicationKey Value");
-            let key_value: &NSRunningApplication = object
-                .downcast_ref::<NSRunningApplication>()
-                .expect("Value is not an NSRunningApplication");
             println!(
                 "Application activated: {:?}",
-                key_value
+                ns_running_application
                     .localizedName()
                     .expect("Failed to capture application localizedName")
             );
