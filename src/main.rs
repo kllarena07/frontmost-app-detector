@@ -63,14 +63,14 @@ impl FrontmostAppDetector {
         let app_observer_class = builder.register();
 
         unsafe {
-            let observer: *mut AnyObject = msg_send![app_observer_class, alloc];
-            let observer: *mut AnyObject = msg_send![observer, init];
+            let observer: *mut NSObject = msg_send![app_observer_class, alloc];
+            let observer: *mut NSObject = msg_send![observer, init];
 
             let workspace = NSWorkspace::sharedWorkspace();
             let notification_center = workspace.notificationCenter();
 
             notification_center.addObserver_selector_name_object(
-                &*(observer as *const AnyObject),
+                &*(observer as *const NSObject),
                 sel!(applicationActivated:),
                 Some(NSWorkspaceDidActivateApplicationNotification),
                 None,
