@@ -21,20 +21,25 @@ macro_rules! start_nsrunloop {
 pub struct FrontmostAppDetector;
 
 impl FrontmostAppDetector {
+    // initialize FrontmostAppDetector object with the `init()` function by
+    // passing in the callback function that will be triggered upon switching the frontmost app
     pub fn init(callback: fn(&NSRunningApplication)) {
         static mut CALLBACK: Option<fn(&NSRunningApplication)> = None;
         unsafe {
             CALLBACK = Some(callback);
         }
 
+        // this is the Observer object that we'll be using
+        // using ClassBuilder since I wasn't able to figure out
+        // how to register external methods with the `define_class!` macro
         let mut builder = ClassBuilder::new(c"AppObserver", NSObject::class())
             .expect("a class with name AppObserver likely already exists.");
 
+        // defining the external methods
         unsafe extern "C" fn init(this: *mut NSObject, _sel: Sel) -> *mut NSObject {
             let this: *mut NSObject = msg_send![super(this, NSObject::class()), init];
             this
         }
-
         unsafe extern "C" fn application_activated(
             _this: *mut NSObject,
             _sel: Sel,
@@ -69,8 +74,10 @@ impl FrontmostAppDetector {
             );
         }
 
+        // register new AppObserver class to the Objective-C runtime
         let app_observer_class = builder.register();
 
+        // add Observer to the notification center
         unsafe {
             let observer: *mut NSObject = msg_send![app_observer_class, alloc];
             let observer: *mut NSObject = msg_send![observer, init];
