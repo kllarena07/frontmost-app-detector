@@ -6,7 +6,7 @@ This repository hosts code that dynamically captures the currently focused appli
 
 I wrote this code for the purpose of integrating it into one of my other projects called [Discord RPC Everything](https://github.com/kllarena07/discord-rpc-everything) since I couldn't find anything else reliable online. So, I decided that I'd also share and open source it while I'm at it.
 
-This code was adapted from some Objective-C code that I generated using LLMs (since I have no experience using Objective-C) using [`objc2`](https://docs.rs/objc2/latest/objc2/index.html) Rust bindings. It also uses the [`objc2_foundation`](https://docs.rs/objc2-foundation/latest/objc2_foundation/) and [`objc2_app_kit`](https://docs.rs/objc2-app-kit/0.3.1/objc2_app_kit/) frameworks 
+This code was adapted from some Objective-C code that I generated using LLMs (since I have no experience using Objective-C) using [`objc2`](https://docs.rs/objc2/latest/objc2/index.html) Rust bindings. It also uses the [`objc2_foundation`](https://docs.rs/objc2-foundation/latest/objc2_foundation/) and [`objc2_app_kit`](https://docs.rs/objc2-app-kit/0.3.1/objc2_app_kit/) frameworks
 
 ## Why You Can't Just Use the Applications Crate
 
@@ -40,36 +40,3 @@ fn handle_app_change(ns_running_application: &NSRunningApplication) {
 FrontmostAppDetector::init(handle_app_change);
 ```
 5. Start the event loop using the `start_nsrunloop!()` macro
-
-## Original Objective-C Code
-```
-#import <Foundation/Foundation.h>
-#import <AppKit/AppKit.h>
-
-@interface AppObserver : NSObject
-@end
-
-@implementation AppObserver
-
-- (void)applicationActivated:(NSNotification *)notification {
-    NSRunningApplication *app = notification.userInfo[NSWorkspaceApplicationKey];
-    NSLog(@"Activated: %@", app.localizedName);
-}
-
-@end
-
-int main(int argc, const char * argv[]) {
-    @autoreleasepool {
-        AppObserver *observer = [[AppObserver alloc] init];
-        [[[NSWorkspace sharedWorkspace] notificationCenter]
-            addObserver:observer
-               selector:@selector(applicationActivated:)
-                   name:NSWorkspaceDidActivateApplicationNotification
-                 object:nil];
-
-        // Start the run loop
-        [[NSRunLoop currentRunLoop] run];
-    }
-    return 0;
-}
-```
