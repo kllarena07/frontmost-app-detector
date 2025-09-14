@@ -49,7 +49,7 @@ impl FrontmostAppDetector {
                 let dereference_notif: &mut NSNotification = &mut *notification;
                 let user_info = dereference_notif
                     .userInfo()
-                    .expect("userInfor returned as None");
+                    .expect("userInfo returned as None");
                 let associated_object = user_info
                     .objectForKey(NSWorkspaceApplicationKey)
                     .expect("Failed to capture value for NSWorkspaceApplicationKey");
