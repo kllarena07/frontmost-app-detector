@@ -1,7 +1,11 @@
-use objc2::runtime::*;
-use objc2::*;
-use objc2_app_kit::*;
-use objc2_foundation::*;
+use objc2::declare::ClassBuilder;
+use objc2::runtime::{NSObject, Sel};
+use objc2::{ClassType, msg_send, sel};
+use objc2_app_kit::{
+    NSRunningApplication, NSWorkspace, NSWorkspaceApplicationKey,
+    NSWorkspaceDidActivateApplicationNotification,
+};
+use objc2_foundation::{NSNotification, NSRunLoop};
 
 macro_rules! start_nsrunloop {
     () => {
